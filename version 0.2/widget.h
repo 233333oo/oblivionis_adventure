@@ -2,13 +2,15 @@
 #define WIDGET_H
 
 #include <QWidget>
-#include<QGraphicsPixmapItem>//图形元素
-#include<QGraphicsView>//视图
-#include<QGraphicsScene>//场景
-#include<QLabel>
-#include<QMovie>
+#include <QGraphicsPixmapItem>
+#include <QGraphicsView>
+#include <QGraphicsScene>
+#include <QLabel>
+#include <QMovie>
 #include <QPropertyAnimation>
 #include <QMouseEvent>
+#include <QList>
+#include "animateditem.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -23,11 +25,13 @@ class Widget : public QWidget
 public:
     Widget(QWidget *parent = nullptr);
     ~Widget();
+
 protected:
     void mouseMoveEvent(QMouseEvent *event) override;
+    void timerEvent(QTimerEvent *event) override;
 
 private:
-    enum class Direction { Left, Right, Up, Down, None };
+    void spawnEnemy();
 
     Ui::Widget *ui;
     QGraphicsView mGameView;
@@ -35,15 +39,15 @@ private:
     QGraphicsPixmapItem mBackGround;
 
     QLabel *oblivious;
-    QMovie *m_movieLeft;     // 向左动画
-    QMovie *m_movieRight;    // 向右动画
-    QPropertyAnimation *m_anim;// 控制移动的动画
+    QMovie *m_movieLeft;
+    QMovie *m_movieRight;
+    QPropertyAnimation *m_anim;
 
-    int m_targetX;      // 目标X坐标
-    bool m_facingRight; // 当前朝向（true=右，false=左）
+    int m_targetX;
+    bool m_facingRight;
+    QList<AnimatedItem*> m_enemies;
+    int m_spawnTimerId;
+    QVector<QPixmap> m_enemyFrames;
 };
-
-
-
 
 #endif // WIDGET_H

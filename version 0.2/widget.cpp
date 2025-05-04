@@ -1,76 +1,84 @@
 #include "widget.h"
 #include "./ui_widget.h"
-#include<QPainter>
-#include<QMouseEvent>
-
+#include <QPainter>
+#include <QMouseEvent>
+#include <QTimerEvent>
+#include <QRandomGenerator>
 
 Widget::Widget(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::Widget)
+    , m_facingRight(true)
 {
     ui->setupUi(this);
 
     this->setFixedSize(800,600);
-    this->setMouseTracking(true);//启动鼠标追踪
-    //场景
-    /*mGameView.setSceneRect(QRect(0,0,800,600));
+    this->setMouseTracking(true);
+
+    // 加载敌人动画帧
+    m_enemyFrames.append(QPixmap(":/resource/doloris/01.png"));
+    m_enemyFrames.append(QPixmap(":/resource/doloris/02.png"));
+    m_enemyFrames.append(QPixmap(":/resource/doloris/03.png"));
+    m_enemyFrames.append(QPixmap(":/resource/doloris/04.png"));
+    m_enemyFrames.append(QPixmap(":/resource/doloris/05.png"));
+    m_enemyFrames.append(QPixmap(":/resource/doloris/06.png"));
+    m_enemyFrames.append(QPixmap(":/resource/doloris/07.png"));
+    m_enemyFrames.append(QPixmap(":/resource/doloris/08.png"));
+    m_enemyFrames.append(QPixmap(":/resource/doloris/09.png"));
+    m_enemyFrames.append(QPixmap(":/resource/doloris/10.png"));
+    // 场景设置
+    mGameView.setSceneRect(QRect(0,0,800,600));
     mScene.setSceneRect(QRect(0,0,800,600));
-    mBackGround.setPixmap(QPixmap(":/scene.png"));//传入背景
+    mBackGround.setPixmap(QPixmap(":/scene.png"));
     mScene.addItem(&mBackGround);
     mGameView.setScene(&mScene);
     mGameView.setParent(this);
-    mGameView.show();*/
+    mGameView.show();
+    mGameView.setMouseTracking(true);  // 允许鼠标追踪
+    mGameView.setAttribute(Qt::WA_TransparentForMouseEvents); // 让鼠标事件穿透
+    mGameView.viewport()->setMouseTracking(true); // 确保视口也支持鼠标追踪
 
-    //加载player动画
-    m_movieLeft = new QMovie(":/oblivious_left.gif", QByteArray(), this);
-    m_movieRight = new QMovie(":/oblivious_right.gif", QByteArray(), this);
+    // 加载player动画
+    m_movieLeft = new QMovie(":/resource/oblivious_left.gif", QByteArray(), this);
+    m_movieRight = new QMovie(":/resource/oblivious_right.gif", QByteArray(), this);
 
-    //player初始化
+    // player初始化
     oblivious = new QLabel(this);
     oblivious->setMovie(m_movieRight);
     m_movieRight->start();
     oblivious->setGeometry(100,100,60,60);
-    oblivious->setMouseTracking(true);//不知道为什么但不加这句追踪时会很卡
+    oblivious->setMouseTracking(true);
     oblivious->show();
+    oblivious->setAttribute(Qt::WA_TransparentForMouseEvents); // 让鼠标事件穿透QLabel
 
-
-
-    //初始化动画
+    // 初始化动画
     m_anim = new QPropertyAnimation(oblivious, "pos", this);
-    m_anim->setDuration(1000); // 动画时长 1000ms
+    m_anim->setDuration(1000);
     m_anim->setEasingCurve(QEasingCurve::OutCirc);
 
-
-
-
-
+    // 启动敌人生成定时器
+    m_spawnTimerId = startTimer(2000); // 每2秒生成一个敌人
 }
-void Widget::mouseMoveEvent(QMouseEvent *event) {
-    // 获取鼠标位置
-    QPoint mousePos = event->pos();
 
-    // 计算 Label 左上角应移动到的位置，使中心对准鼠标
+void Widget::mouseMoveEvent(QMouseEvent *event) {
+    QPoint mousePos = event->pos();
     int labelWidth = oblivious->width();
     int labelHeight = oblivious->height();
     QPoint targetPos = mousePos - QPoint(labelWidth / 2, labelHeight / 2);
 
-    // 如果动画未运行，直接设置起点和终点
     if (m_anim->state() != QPropertyAnimation::Running) {
         m_anim->setStartValue(oblivious->pos());
         m_anim->setEndValue(targetPos);
         m_anim->start();
     } else {
-        // 若动画正在运行，动态更新终点以实现连续追踪
         m_anim->setEndValue(targetPos);
     }
-    //
 
-    m_targetX=targetPos.x();
+    m_targetX = targetPos.x();
     int currentX = oblivious->x();
     int delta = m_targetX - currentX;
     bool shouldFaceRight = delta > 0;
 
-    // 方向变化时切换动画
     if (shouldFaceRight != m_facingRight) {
         m_facingRight = shouldFaceRight;
         oblivious->movie()->stop();
@@ -78,13 +86,33 @@ void Widget::mouseMoveEvent(QMouseEvent *event) {
         oblivious->movie()->start();
     }
 
-
+    // 更新所有敌人的目标位置
+    for (AnimatedItem *enemy : m_enemies) {
+        enemy->setTarget(targetPos);
+    }
 }
 
+void Widget::timerEvent(QTimerEvent *event) {
+    if (event->timerId() == m_spawnTimerId) {
+        spawnEnemy();
+    }
+}
 
+void Widget::spawnEnemy() {
+    if (m_enemyFrames.isEmpty()) return;
 
+    AnimatedItem *enemy = new AnimatedItem(m_enemyFrames);
+    mScene.addItem(enemy);
+    m_enemies.append(enemy);
+
+    // 设置初始目标为玩家当前位置
+    QPoint targetPos = oblivious->pos() + QPoint(oblivious->width()/2, oblivious->height()/2);
+    enemy->setTarget(targetPos);
+}
 
 Widget::~Widget()
 {
+    killTimer(m_spawnTimerId);
+    qDeleteAll(m_enemies);
     delete ui;
 }
