@@ -1,0 +1,20 @@
+<RCC>
+    <qresource prefix="/">
+        <file>resource/doloris/01.png</file>
+        <file>resource/doloris/02.png</file>
+        <file>resource/doloris/03.png</file>
+        <file>resource/doloris/04.png</file>
+        <file>resource/doloris/05.png</file>
+        <file>resource/doloris/06.png</file>
+        <file>resource/doloris/07.png</file>
+        <file>resource/doloris/08.png</file>
+        <file>resource/doloris/09.png</file>
+        <file>resource/doloris/10.png</file>
+        <file>resource/oblivionis_left.gif</file>
+        <file>resource/oblivionis_right.gif</file>
+        <file>resource/scene.png</file>
+        <file>resource/doloris/doloris.mp3</file>
+        <file>resource/end.mp4</file>
+        <file>resource/op.mp4</file>
+    </qresource>
+</RCC>
